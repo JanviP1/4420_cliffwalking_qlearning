@@ -8,7 +8,29 @@ import numpy as np
 import matplotlib.pyplot as plt
 from gymnasium.wrappers import RecordVideo
 import os
-from qlearning import Config, SlipWrapper
+from dataclasses import dataclass
+
+@dataclass
+class Config:
+    alpha: float = 0.1        # learning rate
+    gamma: float = 0.99       # discount factor
+    eps_start: float = 1.0    # initial exploration rate
+    eps_end: float = 0.1      # exploration floor
+    eps_decay: float = 0.99   # multiplied into epsilon after each episode
+    episodes: int = 500
+
+"""With probability p, replace the intended action with a different one."""
+class SlipWrapper(gym.ActionWrapper):
+    def __init__(self, env, p=0.0, seed=None):
+        super().__init__(env)
+        self.p = p
+        self.rng = np.random.default_rng(seed)
+
+    def action(self, action):
+        if self.p > 0 and self.rng.random() < self.p:
+            others = [a for a in range(self.action_space.n) if a != action]
+            return int(self.rng.choice(others))
+        return action
 
 def make_env(slip_p=0.0, seed=None, render_mode=None):
     try:
